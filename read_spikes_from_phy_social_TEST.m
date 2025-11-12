@@ -155,23 +155,44 @@ mouse_name = 'KM45-46';
 clc; clear; close all;
 addpath(genpath('Z:\HarveyLab\Tier1\Kevin\Analysis\20250718_backup_Cindys_PC\Utilities'))
 
-% 
-% phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM33-34\250222_g0\Spike_Sorting\phy';
-% TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM33-34\250222_g0\TTLs\TTLs.mat';
-% beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM33-34\250222*.dat';
+
+% phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM33-34\250220_g0\Spike_Sorting\phy';
+% TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM33-34\250220_g0\TTLs\TTLs.mat';
+% beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM33-34\250220*.dat';
 % mouse_name = 'KM33-34';
+% which_mouse_has_implant=1;
 
+% phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41-42\250805_g0\Spike_Sorting\phy';
+% TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41-42\250805_g0\TTLs\TTLs.mat';
+% beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41-42\250805*.dat';
+% mouse_name = 'KM41-42'; %**0 1 swap
+% which_mouse_has_implant=2;
 
-phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41-42\250805_g0\Spike_Sorting\phy';
-TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41-42\250805_g0\TTLs\TTLs.mat';
-beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41-42\250805*.dat';
-mouse_name = 'KM41-42'; %**0 1 swap
+phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49-50\251104_g0\Spike_Sorting\phy';
+TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49-50\251104_g0\TTLs\TTLs.mat';
+beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49-50\251104*.dat';
+DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM49-50_251104_tracking.mat';
+mouse_name = 'KM49-50'; %**0 1 swap
+which_mouse_has_implant=2;
+
+% phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM47-48\251003_g0\Spike_Sorting\phy';
+% TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM47-48\251003_g0\TTLs\TTLs.mat';
+% beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM47-48\251003*.dat';
+% DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM47-48_251003_tracking.mat';
+% mouse_name = 'KM47-48'; %**0 1 swap
+% which_mouse_has_implant=2;
+
+% phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM61-62\251107_g0\Spike_Sorting\phy';
+% TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM61-62\251107_g0\TTLs\TTLs.mat';
+% beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM61-62\251107*.dat';
+% mouse_name = 'KM61-62'; %**0 1 swap
+% which_mouse_has_implant=2;
 %% Load data
 
 % load unit info
 spike_times = readNPY(fullfile(phy_folder, 'spike_times.npy'));
 spike_clusters = readNPY(fullfile(phy_folder, 'spike_clusters.npy'));
-
+amplitudes    = readNPY(fullfile(phy_folder,'amplitudes.npy'));
 % load auxiliary info <- this only works after running through phy
 try
    
@@ -181,7 +202,8 @@ try
 % alternatively, all i need is depht, cluster_id, group, snr, fr,
 % isi_violation
 % 
-% T_isiviolation = readtable(fullfile(phy_folder, 'cluster_isi_violations_ratio.tsv'),...
+% T_isiviolation = readtable(fullfile(phy_folder, 'cluster_isi_violat
+% ions_ratio.tsv'),...
 %      'FileType','text','Delimiter','\t');
 % T_snr = readtable(fullfile(phy_folder, 'cluster_snr.tsv'),...
 %      'FileType','text','Delimiter','\t');
@@ -209,9 +231,9 @@ end
 
 % load behavior data
 beh_path = dir(beh_folder);
+% info = createBEHstruct_social(mouse_name, beh_path,'T-maze-ephys',0);
 info = createBEHstruct_social(mouse_name, beh_path);
-
-%%% Filter spikes by quality metrics
+%% Filter spikes by quality metrics
 % Thresholds to use: fr>0.01 && snr>4.0 && isi_violations_ratio<1
 goodid = T.snr>4.0 & T.fr>0.01 & T.isi_violations_ratio<1; % isabel
 %goodid = T.snr>1.0 & T.fr>0.5 & T.isi_violations_ratio<1 & T.presence_ratio>0.5; % lily
@@ -221,11 +243,11 @@ goodid = T.snr>1.0 & T.fr>0.01 & T.isi_violations_ratio<1 & T.presence_ratio>0.5
 goodid = (T.snr > 2.0 & T.fr > 0.05 & T.nn_hit_rate > 0.5 & ...
     T.isi_violations_ratio<1 & T.amplitude_cutoff<0.1 & T.presence_ratio>0.9); % Allen + some extra from isabel
 
-%goodid = (T.snr>1.0 & T.isi_violations_ratio<1 & T.amplitude_cutoff<0.1 & T.presence_ratio>0.9);
+goodid = (T.snr>2.0 & T.fr >0.01 & T.isi_violations_ratio<1 & T.presence_ratio>0.9 & T.sync_spike_2<0.15);% 251028
 
 
 
-%%% Align spikes to teensy with TTLs
+%% Align spikes to teensy with TTLs
 %*** this is not working for the social mice...
 % honestly, this might be better using my python script
 
@@ -235,6 +257,13 @@ load(TTL_folder);
 
 spike_times_NIDQ = NPtoNIDQ(1)*double(spike_times) + NPtoNIDQ(2);
 spike_times_teensy = NIDQtoTeensy(1)*spike_times_NIDQ + NIDQtoTeensy(2);
+
+
+% load(DLC_refine);
+% SessCamFrame = TT.coords; %***start from 0, need check
+% bTeensyToFrame=info.bTeensyToFrame;
+% SessCamTime = (SessCamFrame - bTeensyToFrame(2))/bTeensyToFrame(1);
+
 
 %%% Align spikes with TTLs for split files
 % to test, need to see if offset subtractino works ok
@@ -265,7 +294,7 @@ choice_time_nidq_to_teensy = NIDQtoTeensy(1) * choice_time_nidq;
 % retry the syncs?
 end
 
-%%% Test if syncing works here with beh data?
+%% Test if syncing works here with beh data?
 % *** this wont work for sessions before 2025/01/07 since I'm not writing
 % the heartbeat light for every choice (dumb mistake on my end)
 
@@ -296,7 +325,9 @@ choice_nidq2_toTeensy = NIDQtoTeensy(1) * double(choice_nidq) + NIDQtoTeensy(2);
 figure; plot(choice_nidq1_toTeensy - choice_time_1);
 hold on; plot(choice_nidq2_toTeensy - choice_time_2);
 
-%%% Preprocess for plotting, not just checking syncing?
+
+
+%% Preprocess for plotting, not just checking syncing?
 
 % load data
 choice = info.choice; choice_time = info.choice_time;
@@ -311,45 +342,91 @@ choice_time(badid) = []; choice_time_inferred(badid) = [];
 
 % format data
 choice1 = zeros(1,length(choice));  % left choice is 1, right is -1!
-reward1 = zeros(1,length(choice)); 
+reward1_int = zeros(1,length(choice));  %reward intermediate
 choice2 = zeros(1,length(choice)); 
-reward2 = zeros(1,length(choice)); 
+reward2_int = zeros(1,length(choice));
 choice_time_1 = zeros(1,length(choice));
 choice_time_2 = zeros(1,length(choice));
 choice_time_1_inferred = zeros(1,length(choice));
 choice_time_2_inferred = zeros(1,length(choice));
 outcomevals = [-1, 1]; % -1 = right, 1 = left
+
 for trial = 1:length(choice)
     for i = 1:length(choice{trial})
-        if mouseID{trial}(i) == 1 %0
-            % set so assings 1 or -1, and unsassigned is auto 0?
-            choice1(trial) = outcomevals( (double(choice{trial}(i)) > 1)+1 );
-            reward1(trial) = outcomevals( reward{trial}(i)+1 );
-            choice_time_1(trial) = choice_time{trial}(i);
-            choice_time_1_inferred(trial) = choice_time_inferred{trial}(i);
-        elseif mouseID{trial}(i) == 0 %1
-            choice2(trial) = outcomevals( (double(choice{trial}(i)) > 1)+1 );
-            reward2(trial) = outcomevals( reward{trial}(i)+1 );
-            choice_time_2(trial) = choice_time{trial}(i);
-            choice_time_2_inferred(trial) = choice_time_inferred{trial}(i);
+
+
+        if which_mouse_has_implant==1
+            if mouseID{trial}(i) == 0 %0
+                % set so assings 1 or -1, and unsassigned is auto 0?
+                choice1(trial) = outcomevals( (double(choice{trial}(i)) > 1)+1 );
+                reward1_int(trial) = outcomevals( reward{trial}(i)+1 );
+                choice_time_1(trial) = choice_time{trial}(i);
+                choice_time_1_inferred(trial) = choice_time_inferred{trial}(i);
+            elseif mouseID{trial}(i) == 1 %1
+                choice2(trial) = outcomevals( (double(choice{trial}(i)) > 1)+1 );
+                reward2_int(trial) = outcomevals( reward{trial}(i)+1 );
+                choice_time_2(trial) = choice_time{trial}(i);
+                choice_time_2_inferred(trial) = choice_time_inferred{trial}(i);
+            end
+        elseif which_mouse_has_implant==2
+            if mouseID{trial}(i) == 1 %0
+                % set so assings 1 or -1, and unsassigned is auto 0?
+                choice1(trial) = outcomevals( (double(choice{trial}(i)) > 1)+1 );
+                reward1_int(trial) = outcomevals( reward{trial}(i)+1 );
+                choice_time_1(trial) = choice_time{trial}(i);
+                choice_time_1_inferred(trial) = choice_time_inferred{trial}(i);
+            elseif mouseID{trial}(i) == 0 %1
+                choice2(trial) = outcomevals( (double(choice{trial}(i)) > 1)+1 );
+                reward2_int(trial) = outcomevals( reward{trial}(i)+1 );
+                choice_time_2(trial) = choice_time{trial}(i);
+                choice_time_2_inferred(trial) = choice_time_inferred{trial}(i);
+            end
         end
     end
 end
 % filter trials with one choice
 badid = choice1==0 | choice2==0;
+reward1=reward1_int; reward2=reward2_int;
 choice1(badid) = []; choice2(badid) = [];
 reward1(badid) = []; reward2(badid) = [];
 choice_time_1(badid) = []; choice_time_2(badid) = [];
 choice_time_1_inferred(badid) = []; choice_time_2_inferred(badid) = [];
 
+
+
+%% test if camera sync works
+% cam time
+
+% tol = 34;                           % "close enough" threshold (ms)
+
+[dmn2, j] = min(abs(choice_time_2 - SessCamTime), [], 1);  % nearest B for each A
+% keep = dmn < tol;                      % A's that are close to SOME B
+
+% position_choice_time_1_ind  = find(keep);        % indices in A
+% 
+% position_choice_time_1=[TT.x(j) TT.y(j)];
+
+figure;
+scatter3(TT.x,TT.y,zeros(1,length(TT.x)),[],'k')
+hold on;
+scatter3(TT.x(j),TT.y(j),j,[],'r','filled')
 %% pull above, but also q values?
 % [Qmulti,~,acc_multi, Qother] = extract_value_information(info, 'multi-agent');
 % % this is a terrible fit
-
+addpath(genpath('Z:\HarveyLab\Tier1\Kevin\Analysis\20250718_backup_Cindys_PC\RL_modeling'))
 model_use = 'non-social';
-[Q1,~, ~] = extract_value_information(info, model_use);
-[Q2, ~, acc] = extract_value_information(info, model_use, 2); 
 
+[Q1,p, acc] = extract_value_information(info, model_use);
+    if which_mouse_has_implant == 1
+        [Q2, ~, acc] = extract_value_information(info, model_use, 2); 
+        %[Q2, ~, acc] = extract_value_information(info, model_use, 2, 1, 1); 
+    elseif which_mouse_has_implant == 2
+        [Q1, ~, acc] = extract_value_information(info, model_use, 2); 
+        [Q2,p, acc] = extract_value_information(info, model_use);
+
+    else
+        disp('parameter wrong!')
+    end
 deltaQ = Q1(1,:) - Q1(2,:);
 deltaQ2 = Q2(1,:) - Q2(2,:);
 figure; plot(deltaQ, deltaQ2, 'o');
@@ -361,13 +438,48 @@ value_centers = (value_bins(1:end-1) + value_bins(2:end))/2;
 [counts2, ~, idx2] = histcounts(deltaQ2, value_bins);
 counts1
 counts2
+%% modified value conditions
+
+%1. colinearity between value and choice: seperate right and left turn
+%2. colinearity between self value and social value: Qsoc'=Qsoc-(a+bQself)
+% evaluate the correlation between choice and value
+figure;
+histogram(deltaQ(find(choice1==1)+1),20)
+hold on
+histogram(deltaQ(find(choice1==-1)+1),20)
+
+pos_switch=find([0 diff(choice1)]==2);
+neg_switch=find([0 diff(choice1)]==-2);
+
+figure;
+histogram(deltaQ(pos_switch),20)
+hold on
+histogram(deltaQ(neg_switch),20)
+
+figure;
+histogram(deltaQ2(find(choice2==1)),20)
+hold on
+histogram(deltaQ2(find(choice2==-1)),20)
+
+pos_switch2=find([0 diff(choice2)]==2);
+neg_switch2=find([0 diff(choice2)]==-2);
+
+figure;
+histogram(deltaQ2(pos_switch2),20)
+hold on
+histogram(deltaQ2(neg_switch2),20)
+
+%% two mice Q
+figure;
 
 %% Reformat spikes, and filter by good units
 
 spike_times_byunit = cell(sum(goodid),1);
+spike_amplitude_byunit = cell(sum(goodid),1);
 goodunit = find(goodid);
 for i = 1:length(goodunit)
-    spike_times_byunit{i} = spike_times_teensy(spike_clusters==(goodunit(i)-1)); % fixed indexing!    
+    spike_times_byunit{i} = spike_times_teensy(spike_clusters==(goodunit(i)-1)); % fixed indexing!
+    spike_amplitude_byunit{i} = amplitudes(spike_clusters==(goodunit(i)-1));%include amplititude to evaluate drifting 20251110
 end
 
 % these two dont match and I cannot figure out why
@@ -383,17 +495,17 @@ badid_1 = find(choice_time_1 > crash_time);
 badid_2 = find(choice_time_2 > crash_time);
 crash_trial = min([badid_1, badid_2]);
 
-badid = crash_trial : length(choice1);
-choice1(badid) = []; choice2(badid) = [];
-reward1(badid) = []; reward2(badid) = [];
-choice_time_1(badid) = []; choice_time_2(badid) = [];
-choice_time_1_inferred(badid) = []; choice_time_2_inferred(badid) = [];
+crashid = crash_trial : length(choice1);
+choice1(crashid) = []; choice2(crashid) = [];
+reward1(crashid) = []; reward2(crashid) = [];
+choice_time_1(crashid) = []; choice_time_2(crashid) = [];
+choice_time_1_inferred(crashid) = []; choice_time_2_inferred(crashid) = [];
 
-%%% I might redo all the plotting code
+%% I might redo all the plotting code
 % - since the code I downloaded DOES NOT let me modify *anything*
 % - i had a great script I was using in grad school idk what happened.
 
-unit = 50; % and 146 might be choice?
+unit = 66; % and 146 might be choice?
 
 plotOtherMouse = 1;
 plotAccoutrements = 1;
@@ -443,16 +555,6 @@ end
 
 xlabel('Time of choice (port lick)')
 
-%% new plot everything
-% lets use the new raster plot
-% and also plot more controlled
-% e.g., plot right reward, given 4 other conditions
-%       and left reward, given 4 other conditions
-
-% maybe also plot when the othe rmouse licked?
-
-% the session data MUST be processed in a cell above
-% this needs choice_time_1, 
 %% align to choice all
 dosave = 0;
 % unit=120;
@@ -466,18 +568,23 @@ for unit = 1:length(goodunit)
 %
 unit
 spiketimes = milliseconds(spike_times_byunit{unit});
-trialStarts = milliseconds(choice_time_1); % <- when the choice detectino occurs
+% trialStarts = milliseconds(choice_time_1); % <- when the choice detectino occurs
 trialStarts = milliseconds(choice_time_1_inferred); % <- the first lick
 
 trialStartOther = milliseconds(choice_time_2_inferred); 
 trialStartOther = seconds( trialStartOther - trialStarts );
-
 % extract spike times
 spiketimes_all_struct.(strcat("unit",string(unit)))= {}; % Mx1 cell array of spike times
+spikeamp_all_struct.(strcat("unit",string(unit)))= {};
 for trial = 1:length(trialStarts)
+    s_amp_use = spike_amplitude_byunit{unit};
+
     suse = spiketimes' - trialStarts(trial);
+    
+    s_amp_use(abs(suse)>seconds(60)) = []; %crop the amp same as spike time
     suse(abs(suse)>seconds(60)) = []; % lets not save every spike every time
     spiketimes_all_struct.(strcat("unit",string(unit))){trial} = seconds(  suse  );
+    spikeamp_all_struct.(strcat("unit",string(unit))){trial} = s_amp_use;
 end
 end
 % plot all spikes, but were actually just going to do this another way
@@ -487,7 +594,7 @@ end
 %
 % left reward self
 
-%% to firing rate (binning, also bin choice time, reward times)
+% to firing rate (binning, also bin choice time, reward times)
 
 bin_size = 0.1;
 bin_edges = (-4:bin_size:6);
@@ -499,6 +606,7 @@ binned_trialReward=[];
 binned_trialStartOther=[];
 
 binned_trialOtherReward=[];
+all_unit_MeanFR=[];
 for trial = 1:length(trialStarts)
     trial
 for unit = 1:length(goodunit)
@@ -506,6 +614,7 @@ for unit = 1:length(goodunit)
 
 
 FR_all.(strcat("unit",string(unit)))(:,trial) = histcounts(spiketimes_all_struct.(strcat("unit",string(unit))){trial}, bin_edges);
+all_unit_MeanFR(unit,trial)=mean(FR_all.(strcat("unit",string(unit)))(:,trial));
 end
 binned_trialReward(:,trial)=histcounts(trialReward(trial), bin_edges);
 
@@ -513,12 +622,36 @@ binned_trialStartOther(:,trial)=histcounts(trialStartOther(trial), bin_edges);
 
 binned_trialOtherReward(:,trial)=histcounts(trialOtherReward(trial), bin_edges);
 end
+
+
+%% mean activity
+figure;
+h=heatmap(all_unit_MeanFR,"GridVisible",0,'ColorScaling','scaledrows')
+colormap(turbo)
+
+%% amplitude
+trial_mean_amp=[];
+for unit=1:length(goodunit)
+trial_mean_amp(unit,:) = cellfun(@mean, spikeamp_all_struct.(strcat("unit",string(unit))));
+end
+figure;
+h=heatmap(trial_mean_amp,"GridVisible",0,'ColorScaling','scaledrows')
+colormap(turbo)
+%%
+ITI=[0 diff(info.start_time)];
+ITI(badid)=[];
+figure;
+plot(smooth(ITI,10))
+accum_reward1=cumsum(reward1_int);
+accum_reward1(badid)=[];
+
+% plot(accum_reward1)
 %% population dynamics in single trials
 %reformat single unit concatenated single trial
 units = fieldnames(FR_all);         % {'unit1','unit2',...}
 nUnits = numel(units);
 nTrials = size(FR_all.(units{1}),2);
-
+bin_edges = (-4:bin_size:6);
 FR_concat=[];
 
 for tr = 1:nTrials
@@ -527,97 +660,109 @@ for tr = 1:nTrials
     for u = 1:nUnits
         trialData(:,u) = FR_all.(units{u})(:,tr);
     end
-    FR_concat = [FR_concat;zscore(trialData,0,1)];  %z-scored
+    FR_concat = [FR_concat;trialData];  
+    % FR_concat = [FR_concat;zscore(trialData,0,1)];  %z-scored
     % each field = (timeBins × nUnits)
 end
+
 %% PCA/Umap
+rng(45);
 dim_red="PCA"; %"Umap"
 if dim_red=="PCA"
-[coeff,score,~,~,explained,~] = pca(FR_concat);
+[coeff,score,~,~,explained,~] = pca(zscore(FR_concat,0,1));
+% [coeff,score,~,~,explained,~] = pca(FR_concat);
 elseif dim_red=="Umap"
 n_neighbors=50;
 addpath(genpath('umap'));
-[score, umap] = run_umap(FR_concat, 'n_components', 2,'n_neighbors',n_neighbors, 'verbose', 'none','randomize',true);
+% [score, umap] = run_umap(FR_concat, 'n_components', 3,'n_neighbors',n_neighbors,'verbose','none');
+[score, umap] = run_umap(zscore(FR_concat,0,1), 'n_components', 3,'n_neighbors',n_neighbors,'verbose','none');
 end
 
 
 %% four conditions
 timeWithinConcat = repmat(bin_edges(2:end), 1, nTrials);
-trialIDMat = repmat([1:nTrials],100,1);
+trialIDMat = repmat([1:nTrials],length(bin_edges)-1,1);
 trialIDConcat = reshape(trialIDMat, [],1); %trial ID in concatenated series
 
 binned_trialStartOtherConcat=reshape(binned_trialStartOther, [],1);
 binned_trialRewardConcat=reshape(binned_trialReward, [],1);
-span=30
-dimension=2
+span=50
+dimension=3
 condition_c1=[-1 1];
 condition_c2=[-1 1];
 condition_r1=[-1 1];
 condition_r2=[-1 1];
+score_sm=[];
 for pc= 1:dimension %PC
     score_sm(:,pc)=smooth(score(:,pc),span,'sgolay',3);
 end
 
-range=[-1.5 2];
-% figure;
-% bar(explained(1:10))
-% hold on
-% plot(cumsum(explained(1:10)),'-o')
+range=[-22 -15];
+if dim_red=="PCA"
+    figure;
+    bar(explained)
+    hold on
+    plot(cumsum(explained),'-o')
+end
+
 i=1;
 color_seq = orderedcolors("gem");
 figure;
 
 labels=[]
-subplot(10,1,[1 6])
- scatter(score_sm(:,1),score_sm(:,2),30,timeWithinConcat,"MarkerEdgeAlpha",0.2)
+% subplot(10,1,[1 6])
+ % scatter3(score_sm(:,1),score_sm(:,2),score_sm(:,3),30,timeWithinConcat,"MarkerEdgeAlpha",0.3)
+ % colormap("parula")
  hold on
- for c1=condition_c1
-     for c2=condition_c2
-         % for r1=condition_r1 %condition_r1
-         %    for  r2=condition_r2%condition_r2
-         trial_ID=find(choice1==c1 & choice2==c2);
-         % trial_ID=find(reward1==r1 & reward2==r2);
+ trialSect=zeros(nTrials,1);
+ trialSect(50:450)=1;
+ % for c1=condition_c1
+ %     for c2=condition_c2
+ %         trial_ID=find(choice1==c1 & choice2==c2 & trialSect'==1);
+ %          Condition_label=strcat("c1:",string(c1), " c2:",string(c2));
+for r1=condition_r1 %condition_r1
+    for  r2=condition_r2%condition_r2
+        trial_ID=find(reward1==r1 & reward2==r2);
+        Condition_label=strcat("r1:",string(r1), " r2:",string(r2));
+        
          [tf, condition_time] = ismember(trialIDConcat, trial_ID);
-         subplot(10,1,[1 6])
-         % scatter(score_sm(find(timepointsConcat),1),score_sm(find(timepointsConcat),2),[],timeWithinConcat(find(timepointsConcat)),"MarkerEdgeAlpha",0.3)
-         hold on
-         % plot(score_sm(find(condition_time),1),score_sm(find(condition_time),2), "LineWidth",1,"Color",[color_seq(i,:) 0.07])
+
          pc1=score_sm(find(condition_time),1);
          pc2=score_sm(find(condition_time),2);
-          % scatter(score_sm(find(condition_time' & timeWithinConcat==0),1),score_sm(find(condition_time' & timeWithinConcat==0),2),30,"filled", ...
-         %     "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","w","Marker","^","MarkerFaceAlpha",0.7)
-         scatter(score_sm(find(condition_time' & binned_trialStartOtherConcat'==1),1),score_sm(find(condition_time' & binned_trialStartOtherConcat'==1),2),30,"filled", ...
-             "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","w","Marker","o","MarkerFaceAlpha",0.7)
-       
-         m=plot(mean(reshape(pc1,100,[]),2),mean(reshape(pc2,100,[]),2), "LineWidth",4,"Color",color_seq(i,:),'DisplayName',strcat("c1:",string(c1), " c2:",string(c2)))
-         scatter(mean(score_sm(find(condition_time' & timeWithinConcat==0),1)),mean(score_sm(find(condition_time' & timeWithinConcat==0),2)),80,"filled", ...
+         pc3=score_sm(find(condition_time),3);
+         % plot3(pc1,pc2,pc3, "LineWidth",0.2,"Color",color_seq(i,:))
+         m=plot3(mean(reshape(pc1,100,[]),2),mean(reshape(pc2,100,[]),2),mean(reshape(pc3,100,[]),2), "LineWidth",4,"Color",color_seq(i,:),'DisplayName',Condition_label)
+         scatter3(mean(score_sm(find(condition_time' & timeWithinConcat==0),1)),mean(score_sm(find(condition_time' & timeWithinConcat==0),2)),mean(score_sm(find(condition_time' & timeWithinConcat==0),3)),80,"filled", ...
              "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","^")
-          % xlim(range)
-         subplot(10,1,i+6)
-         histogram(score_sm(find(condition_time' & binned_trialStartOtherConcat'==1),1),[range(1):0.2:range(2)],"FaceColor",color_seq(i,:))
-         % xlim(range)
+         scatter3(mean(score_sm(find(condition_time' & timeWithinConcat==-1),1)),mean(score_sm(find(condition_time' & timeWithinConcat==-1),2)),mean(score_sm(find(condition_time' & timeWithinConcat==-1),3)),80,"filled", ...
+             "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","o")
+         scatter3(mean(score_sm(find(condition_time' & timeWithinConcat==3.5),1)),mean(score_sm(find(condition_time' & timeWithinConcat==3.5),2)),mean(score_sm(find(condition_time' & timeWithinConcat==3.5),3)),80,"filled", ...
+             "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","square")
+ 
          i=i+1;
 
      end
 end
 
-%% two conditions
+%% Q value
 timeWithinConcat = repmat(bin_edges(2:end), 1, nTrials);
+
+
 trialIDMat = repmat([1:nTrials],100,1);
 trialIDConcat = reshape(trialIDMat, [],1); %trial ID in concatenated series
 
+deltaQ_using=deltaQ;
+
+deltaQMat = repmat(deltaQ_using,100,1);
+deltaQMatConcat = reshape(deltaQMat, [],1);
 binned_trialStartOtherConcat=reshape(binned_trialStartOther, [],1);
 binned_trialRewardConcat=reshape(binned_trialReward, [],1);
 span=30
-dimension=2
-condition_c1=[-1 1];
-condition_c2=[-1 1];
-condition_r1=[-1 1];
-condition_r2=[-1 1];
+dimension=3
 
 condition_label="self choice";
-condition_def=choice2==condition_c2(1);
-
+condition_def=deltaQ_using>0;
+% condition_def=[1:nTrials]>200;
 
 for pc= 1:dimension %PC
     score_sm(:,pc)=smooth(score(:,pc),span,'sgolay',3);
@@ -628,40 +773,189 @@ range=[-1.5 2];
 % bar(explained(1:10))
 % hold on
 % plot(cumsum(explained(1:10)),'-o')
-i=1;
-color_seq = orderedcolors("gem");
+i=2;
+color_seq = colormap(turbo(100));
 figure;
 
 labels=[]
- % scatter(score_sm(:,1),score_sm(:,2),30,timeWithinConcat,"MarkerEdgeAlpha",0.2)
- hold on
- for c=[1 0]
-     % for r1=condition_r1 %condition_r1
-     %    for  r2=condition_r2%condition_r2
-     trial_ID=find(condition_def==c);
-     % trial_ID=find(reward1==r1 & reward2==r2);
-     [tf, condition_time] = ismember(trialIDConcat, trial_ID);
+% scatter(score_sm(:,1),score_sm(:,2),30,timeWithinConcat,"MarkerEdgeAlpha",0.2)
+hold on
+s=scatter3(score_sm(:,1),score_sm(:,2),score_sm(:,3),10,deltaQMatConcat,"filled","MarkerEdgeAlpha",0.3,"MarkerFaceColor","flat","MarkerFaceAlpha",0.2);
+colorbar
+for c=[0 1]
 
-     % scatter(score_sm(find(timepointsConcat),1),score_sm(find(timepointsConcat),2),[],timeWithinConcat(find(timepointsConcat)),"MarkerEdgeAlpha",0.3)
-     hold on
-     pc1=score_sm(find(condition_time),1);
-     pc2=score_sm(find(condition_time),2);
-     plot(pc1,pc2, "LineWidth",1,"Color",[color_seq(i,:) 0.1])
+    trial_ID=find(condition_def==c);
 
-     % scatter(score_sm(find(condition_time' & timeWithinConcat==0),1),score_sm(find(condition_time' & timeWithinConcat==0),2),30,"filled", ...
-     %     "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","w","Marker","^","MarkerFaceAlpha",0.7)
-     scatter(score_sm(find(condition_time' & binned_trialStartOtherConcat'==1),1),score_sm(find(condition_time' & binned_trialStartOtherConcat'==1),2),30,"filled", ...
-         "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","w","Marker","o","MarkerFaceAlpha",0.7)
+    [tf, condition_time] = ismember(trialIDConcat, trial_ID);
+    hold on
+    pc1=score_sm(find(tf),1);
+    pc2=score_sm(find(tf),2);
+    pc3=score_sm(find(tf),3);
+    MeanTrace1=mean(reshape(pc1,100,[]),2);
+    MeanTrace2=mean(reshape(pc2,100,[]),2);
+    MeanTrace3=mean(reshape(pc3,100,[]),2);
+    m=plot3(MeanTrace1,MeanTrace2,MeanTrace3, "LineWidth",4,"Color",color_seq(i,:));
+    scatter3(MeanTrace1(find(bin_edges(2:end)==0)),MeanTrace2(find(bin_edges(2:end)==0)),MeanTrace3(find(bin_edges(2:end)==0)),80,"filled", ...
+        "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","^")
+    scatter3(MeanTrace1(find(bin_edges(2:end)==-2)),MeanTrace2(find(bin_edges(2:end)==-2)),MeanTrace3(find(bin_edges(2:end)==-2)),80,"filled", ...
+        "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","o")
+    scatter3(MeanTrace1(find(bin_edges(2:end)==2)),MeanTrace2(find(bin_edges(2:end)==2)),MeanTrace3(find(bin_edges(2:end)==2)),80,"filled", ...
+        "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","square")
+     i=i+6;
+end
+colormap("turbo")
+clim([-1 1])
+%% high dim similarity
+ID_condition1=find(reward2==1);
+ID_condition2=find(reward2==-1);
 
-     m=plot(mean(reshape(pc1,100,[]),2),mean(reshape(pc2,100,[]),2), "LineWidth",4,"Color",color_seq(i,:));
-     scatter(mean(score_sm(find(condition_time' & timeWithinConcat==0),1)),mean(score_sm(find(condition_time' & timeWithinConcat==0),2)),80,"filled", ...
-         "MarkerFaceColor",color_seq(i,:),"MarkerEdgeColor","k","Marker","^")
-     % xlim(range)
-     i=i+1;
 
+
+trialIDMat = repmat([1:nTrials],length(bin_edges)-1,1);
+trialIDConcat = reshape(trialIDMat, [],1); %trial ID in concatenated series
+
+zs_FR_3Darray=[];
+score_sm_3Darray=[];
+zs_FR_concat=zscore(FR_concat,0,1);
+for t=1:nTrials %reshape by myself
+zs_FR_3Darray(:,:,t)=zs_FR_concat(find(trialIDConcat==t),:); %time*unit*trial
+score_sm_3Darray(:,:,t)=score(find(trialIDConcat==t),1:30);
+end
+
+trajectory=zs_FR_3Darray;
+
+condition1_FR_concat=trajectory(:,:,ID_condition1); 
+condition2_FR_concat=trajectory(:,:,ID_condition2);
+
+
+condition1_mean=mean(condition1_FR_concat,3);
+condition2_mean=mean(condition2_FR_concat,3);
+
+
+
+figure;
+plot3(condition1_mean(:,1),condition1_mean(:,2),condition1_mean(:,2), "LineWidth",2)
+hold on
+plot3(condition2_mean(:,1),condition2_mean(:,2),condition2_mean(:,2), "LineWidth",2)
+
+D12=sqrt(sum((condition1_FR_concat-condition2_mean).^2,2));
+D21=sqrt(sum((condition2_FR_concat-condition1_mean).^2,2));
+D11=sqrt(sum((condition1_FR_concat-condition1_mean).^2,2));
+D22=sqrt(sum((condition2_FR_concat-condition2_mean).^2,2));
+
+D1=D12./D11;
+D2=D21./D22;
+D_mean=sqrt(sum((condition1_mean-condition2_mean).^2,2));
+%shuffle
+D_shuffle=[];
+ID_shuffle1=[];
+ID_shuffle2=[];
+for s=1:100
+total_picked_trials=[ID_condition1 ID_condition2];
+ID_shuffle1=randsample(total_picked_trials,length(ID_condition1));
+ID_shuffle2=total_picked_trials(find(ismember(total_picked_trials,ID_shuffle1)==0));
+s
+condition1_FR_shuffle=trajectory(:,:,ID_shuffle1); 
+condition2_FR_shuffle=trajectory(:,:,ID_shuffle2);
+shuffle1_mean=mean(condition1_FR_shuffle,3);
+shuffle2_mean=mean(condition2_FR_shuffle,3);
+D_shuffle=[D_shuffle sqrt(sum((shuffle1_mean-shuffle2_mean).^2,2))];
+end
+figure;
+% for i=1:size(D1,3) %single-trial distance
+% plot(D1(:,:,i))
+% hold on;
+% end
+% for i=1:size(D2,3)
+% plot(D2(:,:,i))
+% hold on;
+% end
+% 
+% plot(mean(cat(3,D1,D2),3),"LineWidth",2,"Color","k")
+
+plot(D_mean,"LineWidth",2,"Color","b")
+hold on
+plot(mean(D_shuffle,2),"LineWidth",2,"Color","k")
+%% inc-dec clustering
+condition_c1=[-1 1];
+condition_c2=[-1 1];
+condition_r1=[-1 1];
+condition_r2=[-1 1];
+unit_delta_Fr=[];
+unit_delta_Fr_all=[];
+Condition_label_all=[];
+ % for c1=condition_c1
+ %     for c2=condition_c2
+ %         trial_ID=find(choice1==c1 & choice2==c2 & trialSect'==1);
+ %          Condition_label=strcat("c1:",string(c1), " c2:",string(c2));
+ for r1=condition_r1 %condition_r1
+     for  r2=condition_r2%condition_r2
+         trial_ID=find(reward1==r1 & reward2==r2);
+         Condition_label=strcat("r1:",string(r1), " r2:",string(r2));
+         trial_avg=mean(zs_FR_3Darray(:,:,trial_ID),3);
+         unit_delta_Fr=mean(trial_avg(21:40,:),1)./mean(trial_avg(41:60,:),1);
+         unit_delta_Fr_all=[unit_delta_Fr_all;unit_delta_Fr];
+         Condition_label_all=[Condition_label_all;Condition_label];
+
+     end
+ end
+%% 3 time priods PCA clustering
+condition_c1=[-1 1];
+condition_c2=[-1 1];
+condition_r1=[-1 1];
+condition_r2=[-1 1];
+unit_feature_of_cond=[];
+unit_feature_all=[];
+Condition_label_all=[];
+ % for c1=condition_c1
+ %     for c2=condition_c2
+ %         trial_ID=find(choice1==c1 & choice2==c2 & trialSect'==1);
+ %          Condition_label=strcat("c1:",string(c1), " c2:",string(c2));
+ for r1=condition_r1 %condition_r1
+     for  r2=condition_r2%condition_r2
+         trial_ID=find(reward1==r1 & reward2==r2);
+         Condition_label=strcat("r1:",string(r1), " r2:",string(r2));
+         trial_avg=mean(zs_FR_3Darray(:,:,trial_ID),3);
+         unit_feature_of_cond=[mean(trial_avg(21:40,:),1);mean(trial_avg(41:50,:),1);mean(trial_avg(51:70,:),1)];
+         unit_feature_all=[unit_feature_all;unit_feature_of_cond];
+         Condition_label_all=[Condition_label_all;[strcat(Condition_label,":-2 to 0");strcat(Condition_label,":0 to 1");strcat(Condition_label,":1 to 3")]];
+
+     end
  end
 
+ [coeff_cl,score_cl,~,~,explained_cl,~] = pca(unit_feature_all');
+ medlat = channel_positions(primary_channels+1 , 1);
+ unit_medlat = medlat(goodunit);
+ depth = channel_positions(primary_channels+1 , 2);
+ unit_depth = depth(goodunit);
+ figure;
+ bar(explained_cl)
+ hold on
+ plot(cumsum(explained_cl),'-o')
+ figure;
+ scatter3(score_cl(:,1),score_cl(:,2),score_cl(:,3),[],unit_medlat,"filled")
+ xlabel("PC1")
+ ylabel("PC2")
+ zlabel("PC3")
+ title("x")
+ figure;
+ scatter3(score_cl(:,1),score_cl(:,2),score_cl(:,3),[],unit_depth,"filled")
+  xlabel("PC1")
+ ylabel("PC2")
+ zlabel("PC3")
+  title("depth")
 
+  %%
+  figure;
+  hold on
+  plot(coeff_cl(:,4),"DisplayName","PC1")
+  plot(coeff_cl(:,5),"DisplayName","PC2")
+  plot(coeff_cl(:,6),"DisplayName","PC3")
+  xlim([1 12])
+  xticklabels(Condition_label_all)
+%%
+figure;
+scatter3(pc1,pc2,deltaQMatConcat)
 %% trial_average under conditions
 
 condition_c1=[-1 1];
@@ -670,6 +964,7 @@ condition_r1=[-1 1];
 condition_r2=[-1 1];
 FR_trial_average=[];
 condition=[];
+condition_tagging=[];
 i=1;
 for c1=condition_c1
     for c2=condition_c2
@@ -682,11 +977,27 @@ for c1=condition_c1
                     FR_trial_average.(strcat("unit",string(unit)))(:,i)=mean(FR_all.(strcat("unit",string(unit)))(:,trial_ID),2);
 
                 end
+                condition_tagging=[condition_tagging ; [c1 c2 r1 r2]];
                 i=i+1;
             end
         end
     end
 end
+condition_tagging_tbl=array2table(condition_tagging,'VariableNames',{'c1','c2','r1','r2'});
+
+figure;
+target_condition="c1"
+sign=-1
+conditions_avg_concat=[];
+for unit=1:length(goodunit)
+conditions_avg=FR_trial_average.(strcat("unit",string(unit)))(:,find(condition_tagging_tbl.(target_condition)==sign));
+conditions_avg_concat=[conditions_avg_concat mean(conditions_avg,2)];
+end
+[M,I]=max(conditions_avg_concat,[],1);
+% [~,sortID]=sort(I);
+
+heatmap(conditions_avg_concat(:,sortID)',"GridVisible","off")
+colormap("hot")
 %% stackedplot
 unit=15;
 figure;
@@ -699,7 +1010,7 @@ g=figure;
 count = 1;
 c1 = -1; r1 = 1; % fixing on one mouse
 r1 = 1; r2 = 1;% fixing on reward
-unit=1;
+unit=88;
 psth_all = {}; label_all = {}; num_trials_all = [];
 bin_size = 0.1;
 bin_edges = (-5:bin_size:10);
@@ -721,6 +1032,7 @@ for c1 = [-1,1] % change these as needed
         num_trials = length(trialID);
         psth_all{count} = spike_counts / (num_trials * bin_size); 
         num_trials_all(count) = num_trials;
+        xlim([-4 6])
         count = count+1;
     end
 end
@@ -741,6 +1053,7 @@ axlabel=[];
 for c = 1:length(psth_all)
     if num_trials_all(c) > 15
         plot(bin_centers, psth_all{c})
+        
         axlabel(end+1) = c;
     end
 end

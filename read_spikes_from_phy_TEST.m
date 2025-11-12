@@ -56,16 +56,25 @@ TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM47\250815_g0\TTLs\TTLs.mat';
 beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM47\250815*.dat';
 mouse_name = 'KM47';
 
+
 %%
+
 % set paths
 clc; clear; close all;
 addpath(genpath('Z:\HarveyLab\Tier1\Kevin\Analysis\20250718_backup_Cindys_PC\Utilities'))
 
 
-phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41\250416_g0\Spike_Sorting\phy';
-TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41\250416_g0\TTLs\TTLs.mat';
-beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM41\250416*.dat';
-mouse_name = 'KM33';
+phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49\251020_g0\Spike_Sorting\phy';
+TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49\251020_g0\TTLs\TTLs.mat';
+beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49\251020*.dat';
+DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM49_251020_tracking.mat';
+mouse_name = 'KM49';
+
+phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251108_g0\Spike_Sorting\phy';
+TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251108_g0\TTLs\TTLs.mat';
+beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251108*.dat';
+DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM62_251108_tracking.mat';
+mouse_name = 'KM62';
 %% Load data
 
 % load unit info
@@ -107,9 +116,9 @@ end
 
 % load behavioral data
 beh_path = dir(beh_folder);
-info = createBEHstruct_nonsocial(mouse_name, beh_path);
-
-%% double check if depth
+info = createBEHstruct_nonsocial(mouse_name, beh_path,"None",0);
+% info = createBEHstruct_nonsocial(mouse_name, beh_path);
+% double check if depth
 % does T.depth (from phy) match what I figured out from saved data?
 
 % need to get depth also
@@ -119,7 +128,7 @@ primary_channels = readNPY(fullfile(phy_folder(1:end-4), 'primary_channels.npy')
 depth = channel_positions(primary_channels+1 , 2); % want y coordinte
 % does not match exactly...
 
-%% Filter quality spikes
+% Filter quality spikes
 % by manually labeled
 % [cids, cgs] = readClusterGroupsCSV(fullfile(phy_folder, 'cluster_group.tsv'));
 % % or
@@ -132,8 +141,8 @@ goodid = T.snr>4.0 & T.fr>0.01 & T.isi_violations_ratio<1;
 
 goodid = (T.snr > 2.0 & T.fr > 0.05 & T.nn_hit_rate > 0.5 & ...
     T.isi_violations_ratio<1 & T.amplitude_cutoff<0.1 & T.presence_ratio>0.9); % Allen + some extra from isabel
-
-%% Align spikes to teensy with TTLs
+goodid = (T.snr>2.0 & T.fr >0.01 & T.isi_violations_ratio<1 & T.presence_ratio>0.9 & T.sync_spike_2<0.1);% 251023
+% Align spikes to teensy with TTLs
 % honestly, this might be better using my python script
 
 % 0) sync with existing TTL data
@@ -143,16 +152,20 @@ load(TTL_folder);
 spike_times_NIDQ = NPtoNIDQ(1)*double(spike_times) + NPtoNIDQ(2);
 spike_times_teensy = NIDQtoTeensy(1)*spike_times_NIDQ + NIDQtoTeensy(2);
 
-%% Test if syncing works here with beh data?
-try
-choice_teensy = [info.choice_time{:}];
-catch
-    tmp = cellfun(@(v) v(1), info.choice_time, 'un', 0);
-    choice_teensy = [tmp{:}];
-end
-
-choice_nidq = nidq_choice1;
-choice_nidq_toTeensy = NIDQtoTeensy(1) * double(choice_nidq) + NIDQtoTeensy(2);
+% load(DLC_refine);
+% SessCamFrame = TT.coords; %***start from 0, need check
+% bTeensyToFrame=info.bTeensyToFrame;
+% SessCamTime = (SessCamFrame - bTeensyToFrame(2))/bTeensyToFrame(1);
+%% % Test if syncing works here with beh data?
+% try
+% choice_teensy = [info.choice_time{:}];
+% catch
+%     tmp = cellfun(@(v) v(1), info.choice_time, 'un', 0);
+%     choice_teensy = [tmp{:}];
+% end
+% 
+% choice_nidq = nidq_choice1;
+% choice_nidq_toTeensy = NIDQtoTeensy(1) * double(choice_nidq) + NIDQtoTeensy(2);
 
 %% Reformat spikes by good unit
 %** this is indexing by 1 instead of 0!
@@ -167,24 +180,31 @@ catch
     unit_depth = depth(goodunit); % from kilosort
 end
 
+%% test if camera sync works
+% cam time
+
+% tol = 34;                           % "close enough" threshold (ms)
+
+[dmn2, j] = min(abs(cell2mat(info.choice_time) - SessCamTime), [], 1);  % nearest B for each A
+% keep = dmn < tol;                      % A's that are close to SOME B
+
+% position_choice_time_1_ind  = find(keep);        % indices in A
+% 
+% position_choice_time_1=[TT.x(j) TT.y(j)];
+
+figure;
+scatter3(TT.x,TT.y,zeros(1,length(TT.x)),[],'k')
+hold on;
+scatter3(TT.x(j),TT.y(j),j,[],'r','filled')
 
 %% Redo making tons of plots, but with the new plotting code
 
 
-unit = 23; % filter by depth as well?
-dosave = 0;
 
-savepath = 'D:\ANALYSIS\Kevin\Plots\KM47\250815\units_by_choice\';
-if ~exist(savepath); mkdir(savepath); end
-
-
-% for unit = 1:length(goodunit)
-
-spiketimes = milliseconds(spike_times_byunit{unit});
 % trialStarts = milliseconds([info.choice_time{:}]);
  [choice, reward, choice_time, ~, ~, ~, LTProb, ~] ...
     = extract_session_params(info, 1, 1);
-trialStarts = milliseconds(choice_time);
+
 % spiketimes_all = []; triallabels_all = [];
 % for trial = 1:length(trialStarts)
 %     spiketimes_all = [spiketimes_all, spiketimes' - trialStarts(trial)];
@@ -195,6 +215,85 @@ trialStarts = milliseconds(choice_time);
 % s = spikeRasterPlot(spiketimes_all,triallabels_all);
 % s.XLimits = seconds([-5, 10]);
 
+%% pull above, but also q values?
+% [Qmulti,~,acc_multi, Qother] = extract_value_information(info, 'multi-agent');
+% % this is a terrible fit
+addpath(genpath('Z:\HarveyLab\Tier1\Kevin\Analysis\20250718_backup_Cindys_PC\RL_modeling'))
+model_use = 'non-social';
+
+
+% pull value information!
+[Q,p, acc] = extract_value_information(info, model_use);
+
+deltaQ = Q(1,:) - Q(2,:);
+
+diff_deltaQ = [0;diff(smooth(deltaQ,10))];
+% value_bins = -1:0.2:1;
+% value_centers = (value_bins(1:end-1) + value_bins(2:end))/2;
+% 
+% [counts1, ~, idx] = histcounts(deltaQ, value_bins);
+% [counts2, ~, idx2] = histcounts(deltaQ2, value_bins);
+% counts1
+% counts2
+figure;
+plot(LTProb/100)
+hold on;
+plot(deltaQ)
+hold on;
+plot(diff_deltaQ*5)
+legend(["LProb","deltaQ","diff_deltaQ"])
+yline(0)
+%% spikes
+for unit = 1:length(goodunit)
+
+%
+unit
+spiketimes = milliseconds(spike_times_byunit{unit});
+% trialStarts = milliseconds(choice_time_1); % <- when the choice detectino occurs
+trialStarts = milliseconds(choice_time);
+
+% extract spike times
+spiketimes_all_struct.(strcat("unit",string(unit)))= {}; % Mx1 cell array of spike times
+for trial = 1:length(trialStarts)
+    suse = spiketimes' - trialStarts(trial);
+    suse(abs(suse)>seconds(60)) = []; % lets not save every spike every time
+    spiketimes_all_struct.(strcat("unit",string(unit))){trial} = seconds(  suse  );
+end
+end
+
+bin_size = 0.1;
+bin_edges = (-4:bin_size:6);
+for unit = 1:length(goodunit)
+FR_all.(strcat("unit",string(unit))) = [];
+end
+binned_trialReward=[];
+
+all_unit_MeanFR=[];
+for trial = 1:length(trialStarts)
+    trial
+for unit = 1:length(goodunit)
+%
+
+
+FR_all.(strcat("unit",string(unit)))(:,trial) = histcounts(spiketimes_all_struct.(strcat("unit",string(unit))){trial}, bin_edges);
+all_unit_MeanFR(unit,trial)=mean(FR_all.(strcat("unit",string(unit)))(:,trial));
+end
+
+end
+
+%% mean activity
+figure;
+h=heatmap(all_unit_MeanFR,"GridVisible",0)
+colormap(turbo)
+%% 
+top_10_dQ=find()
+bottom_10_dQ
+
+%%
+unit = 50; % filter by depth as well?
+% for unit = 1:length(goodunit)
+
+spiketimes = milliseconds(spike_times_byunit{unit});
 spiketimes_all = {}; % Mx1 cell array of spike times
 for trial = 1:length(trialStarts)
     suse = spiketimes' - trialStarts(trial);
@@ -216,19 +315,6 @@ end
 
 
 
-
-g=figure; hold on;
-bin_centers = bin_edges(1:end-1)+seconds(bin_size/2);
-plot(bin_centers, R_firing_rates)
-plot(bin_centers, U_firing_rates)
-xlabel('Time (s)') ; ylabel('Firing Rate (hz)');
-legend('Reward','Unreward')
-
-
-
-% by choice and reward...
-% choice = [info.choice{:}]>=2;
-% reward = [info.reward{:}];
 choice = choice>=2;
 g = figure;
 
