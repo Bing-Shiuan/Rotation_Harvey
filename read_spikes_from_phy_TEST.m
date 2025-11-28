@@ -70,10 +70,10 @@ beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM49\251020*.dat';
 DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM49_251020_tracking.mat';
 mouse_name = 'KM49';
 
-phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251108_g0\Spike_Sorting\phy';
-TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251108_g0\TTLs\TTLs.mat';
-beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251108*.dat';
-DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM62_251108_tracking.mat';
+phy_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251110_g0\Spike_Sorting\phy';
+TTL_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251110_g0\TTLs\TTLs.mat';
+beh_folder = 'Z:\HarveyLab\Tier1\Kevin\Videos\KM62\251110*.dat';
+DLC_refine = 'Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\KM62_251110_tracking.mat';
 mouse_name = 'KM62';
 %% Load data
 
@@ -280,6 +280,26 @@ all_unit_MeanFR(unit,trial)=mean(FR_all.(strcat("unit",string(unit)))(:,trial));
 end
 
 end
+
+medlat = channel_positions(primary_channels+1 , 1);
+ unit_medlat = medlat(goodunit);
+ depth = channel_positions(primary_channels+1 , 2);
+ unit_depth = depth(goodunit);
+
+ % amplitude
+trial_mean_amp=[];
+for unit=1:length(goodunit)
+trial_mean_amp(unit,:) = cellfun(@mean, spikeamp_all_struct.(strcat("unit",string(unit))));
+end
+figure;
+h=heatmap(zscore(trial_mean_amp,0,2),"GridVisible",0)
+colormap(turbo)
+ITI=[0 diff(info.start_time)];
+ITI(badid)=[];
+save(strcat("Z:\HarveyLab\Tier1\Bing_Shiuan\Codes\",mouse_name,"_",date,"aligned.mat"),...
+    "FR_all", "all_unit_MeanFR", "binned_trialReward", "binned_trialStartOther", "binned_trialOtherReward",...
+"choice1", "choice2", "reward1", "reward2", "Q1", "Q2", "unit_medlat", "unit_depth", "trial_mean_amp","ITI",'-mat')
+
 
 %% mean activity
 figure;
